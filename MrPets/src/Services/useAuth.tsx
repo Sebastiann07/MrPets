@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { Cliente } from '../Models/models';
 import { authService } from './authService';
+import { assertSupabaseConfigured } from './supabaseClient';
 
 type AuthContextValue = {
   profile: Cliente | null;
@@ -18,19 +19,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   async function login(correo: string, password: string) {
+    assertSupabaseConfigured();
     setIsLoading(true);
-    const data = await authService.login(correo, password);
-    setProfile(data);
-    setIsLoading(false);
-    if (!data) throw new Error('Credenciales incorrectas');
+    try {
+      const data = await authService.login(correo, password);
+      setProfile(data);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function register(nombre: string, correo: string, password: string) {
+    assertSupabaseConfigured();
     setIsLoading(true);
-    const data = await authService.register(nombre, correo, password);
-    setProfile(data);
-    setIsLoading(false);
-    if (!data) throw new Error('No se pudo registrar');
+    try {
+      const data = await authService.register(nombre, correo, password);
+      setProfile(data);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function logout() {

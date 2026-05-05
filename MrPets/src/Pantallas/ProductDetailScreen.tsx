@@ -6,7 +6,7 @@ import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } fr
 import Header from '../Components/Header';
 import { Producto } from '../Models/models';
 import { useAuth } from '../Services/useAuth';
-import { orderService } from '../Services/orderService';
+import { useCart } from '../Services/useCart';
 import { productService } from '../Services/productService';
 import { colors } from '../Theme/colors';
 
@@ -14,6 +14,7 @@ export default function ProductDetailScreen() {
   const route = useRoute<RouteProp<any, any>>();
   const navigation = useNavigation<any>();
   const { profile } = useAuth();
+  const { addItem } = useCart();
   const productId = route.params?.productId;
 
   const [product, setProduct] = useState<Producto | null>(null);
@@ -32,26 +33,13 @@ export default function ProductDetailScreen() {
     void load();
   }, [productId]);
 
-  const handleBuy = async () => {
+  const handleAddToCart = () => {
     if (!profile || !product) return;
+    if (product.stock < 1) return;
 
-    try {
-      const order = await orderService.createOrder(profile.id, [
-        {
-          producto_id: product.id,
-          cantidad: quantity,
-          precio: product.precio,
-        },
-      ]);
-
-      if (order) {
-        Alert.alert('Exito', 'Pedido realizado correctamente');
-        navigation.goBack();
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo completar el pedido.';
-      Alert.alert('Error', message);
-    }
+    addItem(product, quantity);
+    Alert.alert('Listo', 'Producto agregado al carrito');
+    navigation.goBack();
   };
 
   if (loading) {
@@ -89,8 +77,12 @@ export default function ProductDetailScreen() {
         </View>
       </ScrollView>
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.buyButton} onPress={handleBuy} disabled={product.stock < 1}>
-          <Text style={styles.buyButtonText}>Comprar ahora</Text>
+        <TouchableOpacity
+          style={styles.buyButton}
+          onPress={handleAddToCart}
+          disabled={product.stock < 1 || !profile}
+        >
+          <Text style={styles.buyButtonText}>{profile ? 'Agregar al carrito' : 'Inicia sesion para comprar'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -98,18 +90,18 @@ export default function ProductDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
+  container: { flex: 1, backgroundColor: colors.background },
   image: { width: '100%', height: 300, resizeMode: 'cover' },
   content: { padding: 20 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
   price: { fontSize: 22, color: colors.primary, fontWeight: '600', marginBottom: 16 },
-  description: { fontSize: 16, color: '#666', lineHeight: 24, marginBottom: 24 },
+  description: { fontSize: 16, color: colors.textMuted, lineHeight: 24, marginBottom: 24 },
   quantityContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  stockText: { fontSize: 16, color: '#666' },
-  quantityControls: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 20 },
+  stockText: { fontSize: 16, color: colors.textMuted },
+  quantityControls: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceAlt, borderRadius: 20 },
   qtyBtn: { padding: 10 },
   qtyText: { fontSize: 18, fontWeight: 'bold', paddingHorizontal: 16 },
-  footer: { padding: 20, borderTopWidth: 1, borderColor: '#eee' },
+  footer: { padding: 20, borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   buyButton: { backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
-  buyButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' }
+  buyButtonText: { color: colors.textOnPrimary, fontSize: 18, fontWeight: 'bold' }
 });

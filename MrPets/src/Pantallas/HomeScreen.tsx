@@ -77,20 +77,20 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 16 },
   welcomeSection: { marginBottom: 24 },
-  welcomeText: { fontSize: 24, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 4 },
-  subtitle: { fontSize: 16, color: '#666' },
+  welcomeText: { fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
+  subtitle: { fontSize: 16, color: colors.textMuted },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
   statCard: {
-    flex: 1, minWidth: '45%', backgroundColor: 'white', padding: 16, borderRadius: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+    flex: 1, minWidth: '45%', backgroundColor: colors.surface, padding: 16, borderRadius: 16,
+    shadowColor: colors.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8, elevation: 2,
   },
   iconContainer: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  statTotal: { fontSize: 24, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 4 },
-  statLabel: { fontSize: 14, color: '#666', fontWeight: '500' },
+  statTotal: { fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
+  statLabel: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#1a1a1a' },
+  sectionTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
   seeAllText: { fontSize: 14, color: colors.primary, fontWeight: '600' },
 });

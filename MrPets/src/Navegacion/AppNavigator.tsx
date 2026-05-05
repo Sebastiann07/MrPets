@@ -9,10 +9,12 @@ import { colors } from '../Theme/colors';
 import { useAuth } from '../Services/useAuth';
 import AuthNavigator from './AuthNavigator';
 import HomeScreen from '../Pantallas/HomeScreen';
+import CartScreen from '../Pantallas/CartScreen';
 import ProductDetailScreen from '../Pantallas/ProductDetailScreen';
 import ProductsScreen from '../Pantallas/ProductsScreen';
 import ProfileScreen from '../Pantallas/ProfileScreen';
 import UsersScreen from '../Pantallas/UsersScreen';
+import { useCart } from '../Services/useCart';
 
 export type ProductsStackParamList = {
   ProductsList: { initialCategoryId?: string | null } | undefined;
@@ -23,6 +25,7 @@ export type AppTabParamList = {
   HomeTab: undefined;
   ProductsTab: NavigatorScreenParams<ProductsStackParamList> | undefined;
   UsersTab: undefined;
+  CartTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -39,6 +42,10 @@ function ProductsNavigator() {
 }
 
 function AuthenticatedTabs() {
+  const { profile } = useAuth();
+  const { itemCount } = useCart();
+  const isAdmin = profile?.rol === 'admin';
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -51,6 +58,7 @@ function AuthenticatedTabs() {
             HomeTab: 'home',
             ProductsTab: 'pricetags',
             UsersTab: 'people',
+            CartTab: 'cart',
             ProfileTab: 'person-circle',
           };
 
@@ -60,7 +68,11 @@ function AuthenticatedTabs() {
     >
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{ title: 'Inicio' }} />
       <Tab.Screen name="ProductsTab" component={ProductsNavigator} options={{ title: 'Productos' }} />
-      <Tab.Screen name="UsersTab" component={UsersScreen} options={{ title: 'Usuarios' }} />
+      {isAdmin ? (
+        <Tab.Screen name="UsersTab" component={UsersScreen} options={{ title: 'Usuarios' }} />
+      ) : (
+        itemCount > 0 ? <Tab.Screen name="CartTab" component={CartScreen} options={{ title: 'Carrito' }} /> : null
+      )}
       <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: 'Perfil' }} />
     </Tab.Navigator>
   );
