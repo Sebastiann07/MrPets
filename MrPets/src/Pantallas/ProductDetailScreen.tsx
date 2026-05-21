@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Header from '../Components/Header';
 import { Producto } from '../Models/models';
@@ -16,22 +16,28 @@ export default function ProductDetailScreen() {
   const { profile } = useAuth();
   const { addItem } = useCart();
   const productId = route.params?.productId;
+  const isAdmin = profile?.rol === 'admin';
 
   const [product, setProduct] = useState<Producto | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    async function load() {
+    void loadProduct();
+  }, [productId]);
+
+  async function loadProduct() {
+    setLoading(true);
+    try {
       if (productId) {
         const nextProduct = await productService.getProductById(productId);
         setProduct(nextProduct);
       }
+    } finally {
       setLoading(false);
     }
-
-    void load();
-  }, [productId]);
+  }
 
   const handleAddToCart = () => {
     if (!profile || !product) return;
@@ -40,6 +46,26 @@ export default function ProductDetailScreen() {
     addItem(product, quantity);
     Alert.alert('Listo', 'Producto agregado al carrito');
     navigation.goBack();
+  };
+
+  const handleIncreaseStock = async () => {
+    if (!isAdmin || !product) return;
+
+    setIsSubmitting(true);
+    try {
+      const updatedProduct = await productService.updateProductStock(product.id, product.stock + quantity);
+      if (updatedProduct) {
+        setProduct(updatedProduct);
+      } else {
+        await loadProduct();
+      }
+      setQuantity(1);
+      Alert.alert('Listo', 'Stock actualizado correctamente.');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo actualizar el stock.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -69,20 +95,32 @@ export default function ProductDetailScreen() {
                 <Ionicons name="remove" size={20} color={colors.primary} />
               </TouchableOpacity>
               <Text style={styles.qtyText}>{quantity}</Text>
-              <TouchableOpacity onPress={() => setQuantity(Math.min(product.stock, quantity + 1))} style={styles.qtyBtn}>
+              <TouchableOpacity
+                onPress={() => setQuantity(isAdmin ? quantity + 1 : Math.min(product.stock, quantity + 1))}
+                style={styles.qtyBtn}
+              >
                 <Ionicons name="add" size={20} color={colors.primary} />
               </TouchableOpacity>
             </View>
           </View>
+          <Text style={styles.helperText}>
+            {isAdmin ? 'Cantidad a agregar al inventario' : 'Cantidad a agregar al carrito'}
+          </Text>
         </View>
       </ScrollView>
       <View style={styles.footer}>
         <TouchableOpacity
-          style={styles.buyButton}
-          onPress={handleAddToCart}
-          disabled={product.stock < 1 || !profile}
+          style={[styles.buyButton, (!isAdmin && (product.stock < 1 || !profile)) || isSubmitting ? styles.buyButtonDisabled : null]}
+          onPress={isAdmin ? () => void handleIncreaseStock() : handleAddToCart}
+          disabled={(!isAdmin && (product.stock < 1 || !profile)) || isSubmitting}
         >
-          <Text style={styles.buyButtonText}>{profile ? 'Agregar al carrito' : 'Inicia sesion para comprar'}</Text>
+          {isSubmitting ? (
+            <ActivityIndicator color={colors.textOnPrimary} />
+          ) : (
+            <Text style={styles.buyButtonText}>
+              {isAdmin ? 'Agregar al inventario' : profile ? 'Agregar al carrito' : 'Inicia sesion para comprar'}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -98,10 +136,12 @@ const styles = StyleSheet.create({
   description: { fontSize: 16, color: colors.textMuted, lineHeight: 24, marginBottom: 24 },
   quantityContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   stockText: { fontSize: 16, color: colors.textMuted },
+  helperText: { fontSize: 14, color: colors.textMuted, marginTop: 12 },
   quantityControls: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceAlt, borderRadius: 20 },
   qtyBtn: { padding: 10 },
   qtyText: { fontSize: 18, fontWeight: 'bold', paddingHorizontal: 16 },
   footer: { padding: 20, borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   buyButton: { backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
+  buyButtonDisabled: { opacity: 0.65 },
   buyButtonText: { color: colors.textOnPrimary, fontSize: 18, fontWeight: 'bold' }
 });
