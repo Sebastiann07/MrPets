@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import React, { useMemo } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import React, { useCallback, useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Header from '../Components/Header';
@@ -11,8 +11,14 @@ import { colors } from '../Theme/colors';
 
 export default function HomeScreen() {
   const { profile } = useAuth();
-  const { products, categories } = useProducts();
+  const { products, categories, refreshAll } = useProducts();
   const navigation = useNavigation<any>();
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshAll();
+    }, [refreshAll])
+  );
 
   const countsByCategory = useMemo(() => {
     return categories.map((category) => ({

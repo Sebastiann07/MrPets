@@ -17,33 +17,24 @@ export const orderService = {
   },
   createOrder: async (clienteId: string, items: { producto_id: string, cantidad: number, precio: number }[]): Promise<Pedido | null> => {
     try {
-      const id = Date.now().toString();
-      const subtotal = items.reduce((acc, item) => acc + item.cantidad * item.precio, 0);
-      const impuesto = subtotal * 0.16; // Asumimos 16% o 0
-      const total = subtotal + impuesto;
-      
-      const pedido: Pedido = { id, cliente_id: clienteId, estado: 'pendiente', subtotal, impuesto, total };
-      const { data, error } = await supabase.from('pedidos').insert([pedido]).select().single();
+      const { data, error } = await supabase.rpc('create_order_and_decrement_stock', {
+        p_cliente_id: clienteId,
+        p_items: items,
+      });
+
       if (error) {
         console.error('createOrder error:', error);
-        return null;
+        throw new Error(error.message || 'No se pudo completar el pedido.');
       }
-      
-      const detalles = items.map((item, index) => ({
-        id: `${id}-${index}`,
-        pedido_id: id,
-        producto_id: item.producto_id,
-        cantidad: item.cantidad,
-        precio: item.precio
-      }));
-      const { error: errorDetalles } = await supabase.from('pedidos_detalle').insert(detalles);
-      if (errorDetalles) {
-         console.error('createOrderDetalle error:', errorDetalles);
+
+      const first = Array.isArray(data) ? data[0] : data;
+      if (!first) {
+        throw new Error('No se pudo completar el pedido.');
       }
-      return data;
+      return first;
     } catch (e) {
       console.error(e);
-      return null;
+      throw e instanceof Error ? e : new Error('No se pudo completar el pedido.');
     }
   }
 };

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Alert, ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import CategoryFilter from '../Components/CategoryFilter';
 import Header from '../Components/Header';
@@ -37,6 +38,7 @@ export default function ProductsScreen({ navigation, route }: Props) {
     categories,
     selectedCategoryId,
     isLoading,
+    refreshAll,
     selectCategory,
     addProduct,
     editProduct,
@@ -56,6 +58,12 @@ export default function ProductsScreen({ navigation, route }: Props) {
   const selectedCategory = useMemo(
     () => categories.find((category) => category.id === selectedCategoryId) ?? null,
     [categories, selectedCategoryId]
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshAll();
+    }, [refreshAll])
   );
 
   function resetProductForm() {

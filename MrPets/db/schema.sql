@@ -161,6 +161,70 @@ values ('admin01', 'Sebastian', 'admin@gmail.com', '123456', 'admin')
 on conflict (id) do nothing;
 
 -- ============================================================
+-- RPC: crear pedido y descontar stock (transacción atómica)
+-- ============================================================
+create or replace function public.create_order_and_decrement_stock(
+  p_cliente_id text,
+  p_items jsonb
+)
+returns setof public.pedidos
+language plpgsql
+as $$
+declare
+  pedido_id text := gen_random_uuid()::text;
+  subtotal numeric := 0;
+  impuesto numeric := 0;
+  total numeric := 0;
+  item record;
+  current_stock integer;
+begin
+  -- Validar y descontar stock con bloqueo por fila
+  for item in
+    select * from jsonb_to_recordset(p_items)
+      as x(producto_id text, cantidad integer, precio numeric)
+  loop
+    select stock into current_stock
+    from public.productos
+    where id = item.producto_id
+    for update;
+
+    if current_stock is null then
+      raise exception 'Producto no existe: %', item.producto_id;
+    end if;
+
+    if current_stock < item.cantidad then
+      raise exception 'Stock insuficiente para % (disponible %, solicitado %)', item.producto_id, current_stock, item.cantidad;
+    end if;
+
+    update public.productos
+    set stock = stock - item.cantidad
+    where id = item.producto_id;
+
+    subtotal := subtotal + (item.cantidad * item.precio);
+  end loop;
+
+  impuesto := subtotal * 0.16;
+  total := subtotal + impuesto;
+
+  insert into public.pedidos (id, cliente_id, estado, subtotal, impuesto, total)
+  values (pedido_id, p_cliente_id, 'pendiente', subtotal, impuesto, total);
+
+  insert into public.pedidos_detalle (id, pedido_id, producto_id, cantidad, precio)
+  select
+    pedido_id || '-' || row_number() over (),
+    pedido_id,
+    x.producto_id,
+    x.cantidad,
+    x.precio
+  from jsonb_to_recordset(p_items)
+    as x(producto_id text, cantidad integer, precio numeric);
+
+  return query
+  select * from public.pedidos where id = pedido_id;
+end;
+$$;
+
+-- ============================================================
 -- VERIFICACIÓN FINAL
 -- ============================================================
 select 'clientes'        as tabla, count(*) as filas from public.clientes
