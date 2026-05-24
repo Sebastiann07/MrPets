@@ -10,6 +10,7 @@ import { useAuth } from '../Services/useAuth';
 import AuthNavigator from './AuthNavigator';
 import HomeScreen from '../Pantallas/HomeScreen';
 import CartScreen from '../Pantallas/CartScreen';
+import AdminCrearProducto from '../Pantallas/AdminCrearProducto';
 import ProductDetailScreen from '../Pantallas/ProductDetailScreen';
 import ProductsScreen from '../Pantallas/ProductsScreen';
 import ProfileScreen from '../Pantallas/ProfileScreen';
@@ -18,6 +19,7 @@ import { useCart } from '../Services/useCart';
 
 export type ProductsStackParamList = {
   ProductsList: { initialCategoryId?: string | null } | undefined;
+  AdminCrearProducto: { productId?: string } | undefined;
   ProductDetail: { productId: string };
 };
 
@@ -36,6 +38,7 @@ function ProductsNavigator() {
   return (
     <ProductsStack.Navigator screenOptions={{ headerShown: false }}>
       <ProductsStack.Screen name="ProductsList" component={ProductsScreen} />
+      <ProductsStack.Screen name="AdminCrearProducto" component={AdminCrearProducto} />
       <ProductsStack.Screen name="ProductDetail" component={ProductDetailScreen} />
     </ProductsStack.Navigator>
   );
